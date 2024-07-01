@@ -159,7 +159,33 @@ class system_cmd():
 			print ("finish upload")
 		finally:
 			f.close()
+			
+	'''read command from file'''
+	def read_atcommands_from_file(self, path_to_file):
+		open_file = open (path_to_file, "r")		#open file to read
+		commands = open_file.readlines()			#read all lines as list
+		open_file.close								#close file
 		
+		return commands								#return list of commands
+		
+	'''send command to processor'''
+	def send_command(self, path_to_file, port_num):
+		#read commands from file
+		commands = read_atcommands_from_file(path_to_file)
+		
+		#open serial conection NON Block (timeout = 0)
+		serial_port = serial.Serial(port_num, baudrate, timeout = 0)
+		
+		if serial_port:
+			#open com-port
+			print ("open port: ", port_num)
+			#flush tx and rx buffers
+			serial_port.flushInput()
+			serial_port.flushOutput()
+			
+			for com in commands:
+				#send AT-command from file
+				serial_port.write(com.encode())
 
 
 

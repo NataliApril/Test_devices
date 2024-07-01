@@ -141,7 +141,7 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_5.setObjectName("gridLayout_5")
         
-        comports = usb.detect_ports("ttyCH")
+        comports = usb.detect_ports("ttyUSB")
         if not comports:
             comports = ["1", "2", "3", "4",
                         "5", "6", "7", "8"]
@@ -156,7 +156,7 @@ class Ui_MainWindow(QMainWindow):
                      [1, 0, 1, 1], [1, 1, 1, 1],
                      [1, 2, 1, 1], [1, 3, 1, 1]]
         
-        for id_dev in range(0,8):
+        for id_dev in range(0,1):
             if comports[id_dev]:
                 self.dev = DeviceStatus(esp_com[id_dev], comports[id_dev], id_dev)
             else:

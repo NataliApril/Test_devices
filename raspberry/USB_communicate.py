@@ -169,13 +169,12 @@ class system_cmd():
 		return commands								#return list of commands
 		
 	'''send command to processor'''
-	def send_command(self, path_to_file, port_num):
+	def send_command(self, path_to_file, port_num, baudrate = 115200, timeout = 0):
 		#read commands from file
-		commands = read_atcommands_from_file(path_to_file)
-		
+		commands = self.read_atcommands_from_file(path_to_file)
 		#open serial conection NON Block (timeout = 0)
 		serial_port = serial.Serial(port_num, baudrate, timeout = 0)
-		
+		#if serial port opend
 		if serial_port:
 			#open com-port
 			print ("open port: ", port_num)
@@ -183,10 +182,100 @@ class system_cmd():
 			serial_port.flushInput()
 			serial_port.flushOutput()
 			
-			for com in commands:
-				#send AT-command from file
-				serial_port.write(com.encode())
-
+			#if need wait answer from processor
+			if timeout > 0:
+				#calculate delta time to resend command
+				delta_time = timeout//5
+				#run commands from file
+				for com in commands:
+					#print command
+					print(com.strip())
+					#send AT-command from file
+					serial_port.write(com.encode())
+					#flag for stop waiting answer
+					stop_waiting = False
+					#take start time
+					start_time = time.perf_counter()
+					round_time = time.perf_counter()
+					#read GSM-module
+					while (not stop_waiting):			
+						line = serial_port.readline()
+						#cheak timeout
+						if ((time.perf_counter() - start_time) > timeout):
+							stop_waiting = True
+							#serial_port.close()
+						elif ((time.perf_counter() - round_time) > delta_time):
+							round_time = time.perf_counter()
+							#resend AT-command
+							serial_port.write(com.encode())
+						#if data in not empty	
+						if (line):
+							#errors of decode()
+							try: 
+								#decode input string
+								unicode_string = line.decode('utf-8')
+							except UnicodeDecodeError:
+								unicode_string = line.decode('utf-8', 'ignore')
+							except serial.SerialException as se:
+								print("Serial port error:", str(se))
+							except serial.SerialTimeoutExcepction as ter:
+								print ("Timeout error", str(ter))								
+							stop_waiting = True	
+							'''take answer from library'''
+							#debug info
+							'''print (port_num, ": conection close")
+							stop_time = time.perf_counter()
+							print (port_num, ": time stop: ", stop_time)
+							delta = stop_time - start_time
+							print (port_num, ": delta ", delta)'''
+			#if commands is moment
+			elif timeout == 0:
+				#run commands from file
+				for com in commands:
+					#print command
+					print(com.strip())
+					#send AT-command from file
+					serial_port.write(com.encode())
+					#wait time before send next command
+					time.sleep(0.1)
+				'''AT+DEBUG=1 send'''
+				#send command to take status
+				status_command = "AT+STATUS?"
+				serial_port.write(status_command.encode())
+				stop_waiting = False
+				timeout = 5
+				delta_time = timeout // 5
+				#take start time
+				start_time = time.perf_counter()
+				round_time = time.perf_counter()
+				#wait answer about status-device
+				while (not stop_waiting):			
+					line = serial_port.readline()
+					#cheak timeout
+					if ((time.perf_counter() - start_time) > timeout):
+						stop_waiting = True
+						#serial_port.close()
+					elif ((time.perf_counter() - round_time) > delta_time):
+						round_time = time.perf_counter()
+						#resend AT-command
+						serial_port.write(com.encode())
+					#if data in not empty	
+					if (line):
+						#errors of decode()
+						try: 
+							#decode input string
+							unicode_string = line.decode('utf-8')
+						except UnicodeDecodeError:
+							unicode_string = line.decode('utf-8', 'ignore')
+						except serial.SerialException as se:
+							print("Serial port error:", str(se))
+						except serial.SerialTimeoutExcepction as ter:
+							print ("Timeout error", str(ter))								
+						stop_waiting = True	
+						'''parse answer'''
+						
+		#close serial port	
+		serial_port.close()
 
 
     

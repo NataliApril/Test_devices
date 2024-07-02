@@ -46,11 +46,12 @@ def print_cmd():
     cmd.upload_file("esp8266", "/dev/ttyUSB0", "115200")
     
 def read_file():
+    global stop_thread
     cmd = USB.system_cmd()
-    commands = cmd.read_atcommands_from_file("at_commands.txt")
+    cmd.send_command("at_commands_moment.txt", "/dev/ttyUSB0")
     
-    for command in commands:
-        print (command.strip())
+    cmd.send_command("at_commands_wait.txt", "/dev/ttyUSB0", timeout = 1)
+    
     
 if __name__ == "__main__":
     q = queue.Queue()
